@@ -1,0 +1,166 @@
+ =========================
+       League-of-OOP
+ =========================
+          
+  An implementation of a MMO game in Java. The map on which the game is played
+is a 2D rectangle consisting of unit size locations ("squares"). Each location
+has a certain set of properties; the types of locations are:
+   + Land
+   + Volcanic
+   + Desert
+   + Woods
+  
+  The types of heroes available in LOOP are:
+    + Knight
+    + Pyromancer
+    + Rogue
+    + Wizard
+  They all have a number of hit points (HP, also known as "life") and a number of
+experience points (XP). There is also a level-up mechanism based on the experience
+you have gained.
+  All characters have XP initially = 0, corresponding to level 0. At level 0 all skills
+have only the base effect. When a character wins a fight (kills his opponent), his XP will
+increase according to the following formula:
+    XP_Winner = Xp_Winner + max (0, 200 - (Level_winner - Level_loser) * 40)
+
+  As you can see from the formula, winning a fight with an opponent that is at least 5 lower
+levels will not bring any more XP, but winning in front of a higher level opponent can even
+make more than 200XP .
+
+  The XP thresholds required to make the level-up will be calculated according to the formula:
+    XP_level_up = 250 + level_curent * 50
+  At level up a hero will return to 100% HP.
+   
+  Each type of hero has a certain set of abilities whose parameters or effects depend on the land
+on which the land modifiers are and the character they act on (race modifier). The amplifiers are
+multiplier, whether the ability give flat damage or percentage of opponents stats!).
+
+==============
+  PYROMANCER
+==============
+
+  + Ability to handle the fire.
+  + HP: 500 initial, +50 per level.
+  + ABILITIES:
+  
+ # Fireblast - big damage in the current round.
+    Damage: 350, + 50 / level
+    victim Modifier
+      + Rogue : -20%
+      + Knight : +20%
+      + Pyromancer : -10%
+      + Wizard : +5%
+ # Ignite - damage in the current round + lower damage in the 2 rounds.
+    + base damage: 150, + 20 / level
+    + 50 damage per round, + 30 / level.
+    + The modifiers below apply to both base damage and periodic damage:
+    + victim Modifier:
+        Rogue : -20%
+        Knight : +20%
+        Pyromancer : -10%
+        Wizard : +5%
+  ## On the Volcanic Ground, the Pyromancer feeds on the energy of the environment and its abilities give 25% more damage.
+
+==============
+  KNIGHT
+==============
+    
+   + HP: 900 initial, + 80 / level.
+   + ABILITTIES:
+   
+   # Execute - damage in the current round or, if your opponent has an HP
+   #         number lower than a certain limit, will be killed instantly
+   #         (the damage is equal to your opponent's HP).
+
+   + base damage: 200, + 30 / level
+   + HP limit: 20% * the maximum theoretical life of the victim at her level; +1% / level,
+              up to a maximum of 40%
+   + Damage changes according to the victim as below:
+      Rogue + 15%
+      Knight + 0%
+      Pyromancer + 10%
+      Wizard -20%
+   
+   # Slam - damage + imprisonment of the opponent (inability to move) for the next round.
+   
+   + base damage: 100 base damage. +40 / level
+   + victim Modifier
+      Rogue -20%
+      Knight + 20%
+      Pyromancer -10%
+      Wizard + 5%
+   #  Knight is an expert in melee combat. On land, he is stronger than other classes and is
+   # specialized in open field combat and receives 15% bonus damage.
+   
+   
+==============
+  WIZZARD
+==============
+
+   + HP: 400 initial, +30 per level.
+   #  The Wizard has a superior mental capacity that allows it to withstand the desert environment
+   # through meditation and skill enhancement. On the Desert field its skills are 10% stronger.
+   + ABILITTIES: 
+   
+   # Drain - decreases the opponent's life in proportion to what he already has.
+   + percent: 20%, + 5% / level
+   + HP base: min (0.3 * OPPONENT_MAX_HP, OPPONENT_CURRENT_HP)
+              ⇒ damage = percent * min (0.3 * OPPONENT_MAX_HP, OPPONENT_CURRENT_HP)
+   + The modifiers below apply to the percentage variable. They are multiplicative, for example
+     if we have a Wizard level 4 (⇒ 40%) and it applies Drain on a rogue, have a total percentage
+     of 40% * 0.8 = 32%, therefore the formula for calculating the damage is:
+     damage = 0.32 * min (0.3 * OPPONENT_MAX_HP , OPPONENT_CURRENT_HP).
+   + victim Modifier
+      Rogue -20%
+      Knight + 20%
+      Pyromancer -10%
+      Wizard + 5%
+
+   # Deflect - gives damage equal to a percentage of the total damage (without race modifiers) he receives from the opponent
+   + percent: 35%, + 2% / level, up to a maximum of 70%
+   + has no effect on a Wizard (two Wizard heroes do not give reciprc / recursiv damage)
+   + victim Modifier
+      Rogue + 20%
+      Knight + 40%
+      Pyromancer + 30%
+      Wizard N/A
+      
+==============
+  ROGUE
+==============
+
+   + Expert in sneak-attacks.
+   + HP: 600 initial, +40 / level
+   + ABILITTIES:
+   
+   # Backstab - damage in the current round with the possibility of critical hit.
+   + base damage: 200, +20 dmg / level.
+   + Once in 3 strokes (kick = applied Backstab, anywhere) Rogue can give 1.5x damage only
+     if at that time he is on the Woods pitch, otherwise the cycle resumes.
+   + victim Modifier
+      Rogue + 20%
+      Knight -10%
+      Pyromancer + 25%
+      Wizard + 25%
+      
+   # Paralysis - prolonged damage + inability of the opponent for a number of rounds
+   + damage / round: 40, + 10 / level - apply in the current round (where the fight takes place) + extra rounds
+   + number of overtime rounds: 3 (6, if the fight takes place on the Woods field)
+   + victim Modifier damage:
+      Rogue 10%
+      Knight -20%
+      Pyromancer + 20%
+      Wizard + 25%
+   
+   # Due to its camouflage abilities, the Rogue is stronger on the Woods field. On this type of land Rogue
+   #  receives 15% bonus damage.
+   
+   ------------------
+     Game mechanism
+   ------------------
+
+  The game is based on rounds. In one round, all the characters perform one (well determined) movement,
+and if two reach the same location, they are struggling. A struggle works as follows: each hero will
+calculate the parameters of his or her own skills, depending on their level and the ground they are at.
+Then each skill will be modified according to the victim. After applying skills, the heroes will calculate
+their new HP and XP as needed, after which the round ends.
